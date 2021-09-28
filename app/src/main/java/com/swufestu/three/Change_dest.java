@@ -2,7 +2,9 @@ package com.swufestu.three;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -37,10 +39,20 @@ public class Change_dest extends AppCompatActivity {
 
     public void save(View view){
         Log.i(TAG, "save: ");
+        SharedPreferences sp = getSharedPreferences("rate_file", Activity.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+
         //获取新的数据
         float newDollar = Float.parseFloat((dollarText.getText().toString()));
         float newEuro = Float.parseFloat((euroText.getText().toString()));
         float newWon = Float.parseFloat((wonText.getText().toString()));
+
+        //保存数据到rate_file.xml
+        editor.putFloat("dollarRate",newDollar);
+        editor.putFloat("euroRate",newEuro);
+        editor.putFloat("wonRate",newWon);
+        editor.apply();
+
 
         Log.i(TAG, "save: 获取到新的值");
         Log.i(TAG, "onCreate: newDollar="+newDollar);

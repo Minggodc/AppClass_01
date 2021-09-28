@@ -4,9 +4,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,25 +18,63 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-public class Change extends AppCompatActivity {
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class Change extends AppCompatActivity implements Runnable{
 
     public static final String TAG = "activity_change";
     EditText RMB;
     TextView s;
-    float dollarRate = 0.15f;
-    float euroRate = 0.13f;
-    float wonRate = 182.39f;
+    float dollarRate,euroRate,wonRate;
+    Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_change);
 
+        //从rate_file.xml中获取汇率
+        getRateFromSP();
+
         RMB = findViewById(R.id.RMB);
         s = findViewById(R.id.money);
 
-
+        handler = new Handler(){
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                Log.i(TAG, "handleMessage: 收到消息");
+                if(msg.what==6){
+                    String str = (String) msg.obj;
+                    Log.i(TAG, "handleMessage: getMessage msg="+str);
+                    s.setText(str);
+                }
+                super.handleMessage(msg);
+            }
+        };
+        //启动线程
+        Thread thread = new Thread(this);
+        thread.start();//this.run()
     }
+
+
+
+    public void getRateFromSP() {
+        SharedPreferences sp = getSharedPreferences("rate_file", Activity.MODE_PRIVATE);
+        dollarRate = sp.getFloat("dollarRate",0.15f);
+        euroRate = sp.getFloat("euroRate",0.13f);
+        wonRate = sp.getFloat("wonRate",182.39f);
+
+        Log.i(TAG, "onCreate: dollarRate="+dollarRate);
+        Log.i(TAG, "onCreate: euroRate="+euroRate);
+        Log.i(TAG, "onCreate: wonRate="+wonRate);
+    }
+
     public void ClickC(View view){
         Log.i(TAG, "ClickC: ");
 
@@ -105,4 +147,51 @@ public class Change extends AppCompatActivity {
 
         }
     }
+
+    @Override
+    public void run() {
+        Log.i(TAG, "run: run----------");
+        //延迟
+        try {
+            Thread.sleep(3000);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        //获取网络数据
+        URL url = null;
+        try {
+            url = new URL("https://www.swufe.edu.cn/info/1002/18045.htm");
+            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+            InputStream in = http.getInputStream();
+            Log.i(TAG, "run: msg="+inputStream2String(in));
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        //发送消息
+        Message msg = handler.obtainMessage(6);
+        //msg.what=6;
+        msg.obj = "Hello from run()";
+        handler.sendMessage(msg);
+    }
+
+
+    private String inputStream2String(InputStream inputStream) throws  IOException{
+        final int buffersize = 1024;
+        final char[] buffer = new char[buffersize];
+        final StringBuilder out = new StringBuilder();
+        Reader in = new InputStreamReader(inputStream,"utf-8");
+        for(;;){
+            int rsz = in.read(buffer,0,buffer.length);
+            if(rsz<0){
+                break;
+            }
+            out.append(buffer,0,rsz);
+        }
+        return out.toString();
+    }
 }
+
+
