@@ -36,7 +36,7 @@ public class GetRateTwo implements Runnable{
             Document doc = Jsoup.connect("https://www.boc.cn/sourcedb/whpj/").get();
             Element firstTable = doc.getElementsByTag("table").get(1);
             Elements tds = firstTable.getElementsByTag("td");
-            Log.i(TAG, "run: tds="+tds);
+            //Log.i(TAG, "run: tds="+tds);
             for(int i = 0;i<tds.size();i+=8){
                 Element td1 = tds.get(i);
                 Element td2 = tds.get(i+1);
